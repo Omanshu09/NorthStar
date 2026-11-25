@@ -1,0 +1,1 @@
+{"name":"support-ticket-system","private":true,"workspaces":["backend","frontend"],"scripts":{"dev":"concurrently \"npm:dev -w backend\" \"npm:dev -w frontend\"","build":"npm run build --workspaces","test":"npm test -w backend"},"devDependencies":{"concurrently":"^9.1.0"}}
