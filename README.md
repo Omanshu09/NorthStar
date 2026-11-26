@@ -1,112 +1,247 @@
-# Northstar Support
+Northstar Support
 
-A full-stack helpdesk for customer requests and the administrators who manage them. Users can create, track, edit open requests, and converse with support. Admins get a queue with ticket ownership, priority and status controls. The frontend uses a real Express API backed by PostgreSQL through Prisma.
+Northstar Support is a helpdesk application where customers can raise support tickets and track their progress. Admins can view incoming tickets, manage them, reply to users, and update their status.
 
-## Features
+I built this project to cover the main parts of a support system, including authentication, role-based access, ticket management, database operations, and API development.
 
-- Cookie-based JWT authentication, bcrypt password hashes, and server-enforced USER/ADMIN roles.
-- Ticket creation, search, filtering, pagination, owner-only access, and open-ticket editing/deletion.
-- Admin queue, status and priority management, comments, activity history, and dashboard counts.
-- In-app notifications, centralized validation/errors, Helmet, restricted credentialed CORS, and login rate limiting.
-- Responsive Next.js interface with ticket details, conversation, and notification views.
+Live links
 
-## Stack and structure
+- Frontend: https://north-star-omanshu.vercel.app
+- Backend API: https://northstar-31ju.onrender.com
+- Health check: https://northstar-31ju.onrender.com/health
+- GitHub: https://github.com/Omanshu09/NorthStar
+- Live: https://north-star-omanshu.vercel.app/
 
-Next.js, React, TypeScript, Tailwind CSS, React Hook Form, Zod, Lucide React; Express, Zod, JWT, bcryptjs; PostgreSQL and Prisma; Vitest and Supertest.
+Features
 
-```text
-support-ticket-system/
-  backend/      Express API, Prisma schema/migration, seed, tests
-  frontend/     Next.js application
-  postman/      API collection
-  API_DOCUMENTATION.md
-  render.yaml
-  vercel.json
-```
+- User registration and login with cookie-based JWT authentication.
+- Separate USER and ADMIN roles, with access checks on the backend.
+- Customers can create, view, edit and delete their own open tickets.
+- Ticket search, filtering and pagination.
+- Admin dashboard to view and manage tickets.
+- Admins can assign ticket priority and update ticket status.
+- Comments and conversations on tickets.
+- Activity history for ticket updates.
+- In-app notifications.
+- Input validation and centralized error handling.
+- Login rate limiting and restricted CORS settings.
+- Responsive interface for desktop and mobile screens.
 
-The API owns authentication, authorization, validation, business rules, and persistence. The browser only holds an HTTP-only session cookie and calls the API with credentials. `User` owns tickets and comments; tickets own comments, activity rows, and notifications. Cascading deletes keep ticket-related records consistent.
+Technologies used
 
-## Requirements and local setup
+Frontend
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- React Hook Form
+- Zod
+- Lucide React
 
-Use Node.js 20 or newer, npm, and a PostgreSQL database (local or Neon). From the project root:
+Backend
+- Node.js
+- Express
+- TypeScript
+- Prisma ORM
+- JWT
+- bcryptjs
+- Zod
+
+Database and testing
+- PostgreSQL
+- Neon
+- Vitest
+- Supertest
+- Postman
+
+Project structure
+
+NorthStar/
+├── backend/       Express API, Prisma schema, migrations and tests
+├── frontend/      Next.js application
+├── postman/       Postman API collection
+├── API_DOCUMENTATION.md
+├── render.yaml
+├── vercel.json
+├── package.json
+└── README.md
+
+
+How the application works
+
+The frontend communicates with the Express backend through API requests. The backend handles authentication, permissions, validation, ticket operations and database access.
+
+When a user logs in, the server creates a JWT and stores it in an HTTP-only cookie. The browser sends this cookie with later API requests. This keeps the session token out of JavaScript-accessible storage.
+
+The backend checks the user's role before allowing access to admin routes. Regular users can only access their own tickets, while admins can manage tickets across the system.
+
+Database design
+
+The application uses PostgreSQL, with Prisma handling database queries and relationships.
+
+The main models are:
+
+- User: Stores account details, password hashes, and user roles.
+- Ticket: Stores the subject, description, category, priority, status, and ticket owner.
+- Comment: Stores messages added to a ticket by users or admins.
+- ActivityLog: Records actions performed on tickets.
+- Notification: Stores in-app notifications for users.
+
+A user can create multiple tickets. Each ticket can have multiple comments, activity records and notifications. These records are connected through database relations.
+
+Ticket-related records use cascading deletes so that removing a ticket also removes its associated records.
+
+Requirements
+
+To run the project locally, you need:
+
+- Node.js 20 or newer
+- npm
+- A PostgreSQL database, either local or hosted on Neon
+
+Local setup
+
+Clone the repository and install the dependencies:
 
 ```bash
-cp .env.example .env
+git clone https://github.com/Omanshu09/NorthStar.git
+cd NorthStar
 npm install
 ```
 
-Copy `backend/.env.example` to `backend/.env`, then set `DATABASE_URL` to a PostgreSQL connection string and `JWT_SECRET` to a long random value. Keep `FRONTEND_URL=http://localhost:3000`, `PORT=4000`, and `NODE_ENV=development`. Copy `frontend/.env.example` to `frontend/.env.local`; set `NEXT_PUBLIC_API_URL=http://localhost:4000/api`. The root `.env.example` lists all variables for reference.
+Create the environment files:
 
-Apply migrations and create an administrator:
+- Copy `backend/.env.example` to `backend/.env`.
+- Copy `frontend/.env.example` to `frontend/.env.local`.
+
+Set the backend environment variables:
+
+```env
+DATABASE_URL="your_postgresql_connection_string"
+JWT_SECRET="your_long_random_secret"
+FRONTEND_URL="http://localhost:3000"
+PORT=4000
+NODE_ENV=development
+ADMIN_NAME="Admin"
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="your_password_at_least_12_characters"
+```
+
+Set the frontend environment variable:
+
+```env
+NEXT_PUBLIC_API_URL="http://localhost:4000/api"
+```
+
+The root `.env.example` file also lists the environment variables used by the project.
+
+Database setup
+
+Run the database migration:
 
 ```bash
 npm run db:migrate -w backend
+```
+
+Create the administrator account:
+
+```bash
 npm run db:seed -w backend
 ```
 
-Set `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` before seeding. The password must be at least 12 characters. The two seeded user accounts are `alex@example.com` and `jamie@example.com`; their demo password is `Demo-{email}-Password-2026` (for example `Demo-alex@example.com-Password-2026`). Change these accounts immediately if the seed is used outside a local demo. Seeding can be repeated safely; sample tickets are only created when the database has no tickets.
+The seed script uses `ADMIN_NAME`, `ADMIN_EMAIL` and `ADMIN_PASSWORD` to create or update the administrator account. The password must contain at least 12 characters.
 
-Run both applications with `npm run dev`. The UI is at `http://localhost:3000`, API at `http://localhost:4000`, and health probe at `http://localhost:4000/health`.
+The seed script also creates two sample customer accounts and sample tickets when the database has no tickets. These are intended for local testing. Do not use the sample accounts in a production database.
 
-## Environment variables
+Run the application
 
-| Variable | Used by | Purpose |
-|---|---|---|
-| `DATABASE_URL` | Backend | PostgreSQL connection |
-| `JWT_SECRET` | Backend | Signs session tokens; never expose to the browser |
-| `FRONTEND_URL` | Backend | Exact allowed frontend origin |
-| `PORT` | Backend | HTTP port (Render supplies this) |
-| `NODE_ENV` | Both | Development/production cookie and runtime behavior |
-| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Seed | Controlled administrator provisioning |
-| `NEXT_PUBLIC_API_URL` | Frontend | Public API base URL, such as `https://api.example.com/api` |
+Start the frontend and backend from the project root:
 
-## Database and scripts
+```bash
+npm run dev
+```
 
-Prisma models and the initial SQL migration are in `backend/prisma`. Run `npm run db:migrate -w backend` locally and `npm run db:deploy -w backend` in production. Generate the client with `npm run build -w backend` or `npx prisma generate --schema backend/prisma/schema.prisma`. Use `npm run db:seed -w backend` for the safe demo seed.
+The application will be available at:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:4000`
+- Health check: `http://localhost:4000/health`
+
+Useful commands
+
+Build the backend:
 
 ```bash
 npm run build -w backend
+```
+
+Build the frontend:
+
+```bash
 npm run build -w frontend
+```
+
+Run backend tests:
+
+```bash
 npm test -w backend
 ```
 
-Tests use the `DATABASE_URL` database, so copy `backend/.env.example` to `backend/.env` and point `DATABASE_URL` at an isolated test database before running them. The app does not automatically reset the database; its test fixtures are removed after the suite completes.
+The tests use the database configured through `DATABASE_URL`. Use a separate test database rather than your main development or production database.
 
-## API
+API documentation
 
-All routes are documented in [API_DOCUMENTATION.md](./API_DOCUMENTATION.md). Requests return a `data` property; errors return `error`. Login sets the `support_token` HttpOnly cookie. Browser fetches use `credentials: 'include'`. The Postman collection stores cookies in Postman's cookie jar after login. Admin routes always check role on the server.
+The API endpoints and their request and response formats are documented in [API_DOCUMENTATION.md](./API_DOCUMENTATION.md).
 
-## Event handling
+The project also includes a Postman collection in the `postman/` folder for testing the API.
 
-Ticket creation, edits, status changes, resolution, and comments publish named events through Node's in-process `EventEmitter`. Registered listeners write activity records and deliver in-app notifications after the primary database write succeeds. Handler failures are logged without changing the successful primary response. This is deliberately lightweight: events are not durable, not retried, and can be lost if the process exits during handling. Use a transactional outbox and durable worker if delivery guarantees become a production requirement.
+The API uses a consistent response structure. Successful responses contain a `data` property, while errors contain an `error` property.
 
-## Production deployment
+Login sets the `support_token` HTTP-only cookie. Browser requests include credentials so that the session cookie is sent to the backend.
 
-### Neon
+Implementation decisions
 
-1. Create a PostgreSQL project/database in Neon.
-2. Copy its pooled connection string into the backend `DATABASE_URL` (keep SSL enabled).
-3. Keep a direct connection string available if your migration workflow requires it.
+A few choices I made while building the application:
 
-### Render API
+- HTTP-only cookies for authentication: The session token is not stored in local storage. The browser sends the cookie with API requests.
+- Backend role checks: Admin permissions are checked by the server, not just by hiding frontend controls.
+- Prisma with PostgreSQL: Prisma provides a clear way to define relationships and manage database operations.
+- Validation on the backend: Incoming data is checked before it reaches the database.
+- Separate activity and notification records: Ticket actions can be tracked and users can see updates in the application.
 
-1. Push this folder to a Git repository and create a Render Web Service from it.
-2. Use the root `render.yaml` blueprint or configure root directory `backend`, build command `npm install && npm run build`, start command `npm run db:deploy && npm start`, and health path `/health`.
-3. Set `DATABASE_URL`, `JWT_SECRET` (use a generated secret), `FRONTEND_URL` (the deployed Vercel origin), and `NODE_ENV=production`.
-4. Set `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` only if running the seed command from a controlled one-off shell. Never use demo passwords in production.
+Ticket creation, edits, status changes, resolution and comments also publish events through Node.js's in-process `EventEmitter`. Registered listeners create activity records and notifications after the main database operation succeeds.
 
-Render free instances may sleep; the first request can take longer while the service wakes. The UI displays API errors, and retrying after the health endpoint responds is sufficient.
+This event handling is lightweight. Events are not stored in a durable queue and are not retried if a handler fails or the process stops. A transactional outbox and background worker would be a suitable next step if stronger delivery guarantees were needed.
 
-### Vercel frontend
+Production deployment
 
-1. Import the repository into Vercel and set the project root to `frontend`.
-2. Set `NEXT_PUBLIC_API_URL` to `https://<render-service>.onrender.com/api`.
-3. Deploy, then set the Render `FRONTEND_URL` to the exact Vercel origin and redeploy the API.
-4. Production cookies use `Secure` and `SameSite=None`; both services must use HTTPS. Configure the same API origin in all environments.
+The application is deployed using Vercel, Render and Neon.
 
-## Known limitations
+Frontend on Vercel
 
-- Event delivery is in-process and best-effort, as described above.
-- There is no password reset or email delivery; notifications are in-app.
-- This repository contains no real deployment credentials and does not claim a deployment has been performed.
-- The API test suite needs a separate PostgreSQL test database. No external database credentials are included.
+The Next.js frontend is deployed on Vercel. The project root is set to `frontend` and `NEXT_PUBLIC_API_URL` points to the deployed backend API.
+
+Backend on Render
+
+The Express API is deployed as a Render Web Service. The backend connects to the PostgreSQL database hosted on Neon.
+
+The backend uses environment variables for the database connection, JWT secret, frontend origin, and runtime settings. Production cookies use `Secure` and `SameSite=None`, so both the frontend and backend must use HTTPS.
+
+The Render free instance may sleep when it is not being used. Its first request after a period of inactivity can take longer while the service starts.
+
+Known limitations
+
+- There is no password reset or email delivery feature.
+- Notifications are available inside the application only.
+- Event handling uses an in-process event emitter, so it does not provide durable delivery or automatic retries.
+- Backend tests require a separate PostgreSQL test database.
+
+Future improvements
+
+Some things I would like to add in a future version:
+
+- Password reset and email notifications.
+- More detailed admin and ticket analytics.
+- Durable background jobs for activity and notification processing.
+- Better automated test coverage for frontend and backend workflows.
+- More advanced ticket assignment and filtering options.
